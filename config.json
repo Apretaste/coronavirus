@@ -1,0 +1,9 @@
+{
+	"name": "coronavirus",
+	"caption": "CoronaVirus",
+	"description": "Muestra el estado del Coronvirus en el mundo y noticias de última hora sobre la enfermedad.",
+	"creator": "salvi@apretaste.org",
+	"category": "otros",
+	"listed": true,
+	"guest": true
+}
