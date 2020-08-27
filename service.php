@@ -72,7 +72,7 @@ class Service
 	private function getJSONDataForToday()
 	{
 		// get content from cache
-		$cache = TEMP_PATH . "cache/coronavirus" . date("Ymd") . ".cache";
+		$cache = TEMP_PATH . "cache/coronavirus_" . date("Ymd") . ".cache";
 		if (file_exists($cache)) {
 			$data = unserialize(file_get_contents($cache));
 		}
