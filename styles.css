@@ -1,3 +1,10 @@
+/* FLAGS */
+
+.flag {
+	height:10px;
+	margin-right:5px;
+}
+
 /* SEARCH FIELD */
 
 .search-field > i {

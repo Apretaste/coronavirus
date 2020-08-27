@@ -14,12 +14,13 @@
 
 <div class="row">
 	<div class="col s12">
-		<p>Ordenado por muertes por millón de habitantes.</p>
+		<p class="grey-text">Ordenado por muertes por millón de habitantes.</p>
+
 		<% countries.forEach(function(item, i){ %>
 			<div class="card" data-value="<%= item.name %>">
 				<div class="card-person grey lighten-5">
 					<% if(item.code) { %>
-						<img style="height:10px;" src="{{APP_RESOURCES}}/images/flags/<%= item.code %>.png"/>
+						<img class="flag" src="{{APP_RESOURCES}}/images/flags/<%= item.code %>.png"/>
 					<% } %>
 					<%= item.name %>
 					<span class="chip tiny clear right"><%= i+1 %></span>
