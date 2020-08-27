@@ -4,17 +4,29 @@ $(document).ready(function () {
 
 function filter(countryNameInserted) {
 	// show everything
-	$('li.collection-item').show();
+	$('.card').show();
 
 	// do not filter empty strings
 	if(countryNameInserted == "") return;
 
 	// filter the list by country name
-	$('li.collection-item').hide().each(function(i, e){
+	$('.card').hide().each(function(i, e){
 		var countryName = $(e).attr('data-value').toLowerCase();
 
 		if (countryName.indexOf(countryNameInserted.toLowerCase()) >= 0) {
 			$(e).show();
 		}
 	});
+}
+
+// add commas to an integer number
+function format(number) {
+	var decimalSeparator = ".";
+	var thousandSeparator = ",";
+	var result = String(number);
+	var parts = result.split(decimalSeparator);
+	result = parts[0].split("").reverse().join("");
+	result = result.replace(/(\d{3}(?!$))/g, "$1" + thousandSeparator);
+	parts[0] = result.split("").reverse().join("");
+	return parts.join(decimalSeparator);
 }

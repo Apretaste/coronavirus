@@ -13,17 +13,18 @@ class Service
 	 * @param Request
 	 * @param Response
 	 */
-	public function _main(Request $request, Response &$response)
+	public function _main(Request $request, Response $response)
 	{
 		// get JSON data
 		$data = $this->getJSONDataForToday();
 
 		// get content data
 		$content = [
-			"updated" => date('d/m/Y h:i a', strtotime($data->confirmed->last_updated)),
-			"confirmed" => number_format($data->confirmed->latest),
-			"deaths" => number_format($data->deaths->latest),
-			"recovered" => number_format($data->recovered->latest)
+			"timestamp" => $data->timestamp,
+			"cases" => $data->cases,
+			"deaths" => $data->deaths,
+			"recovered" => $data->recovered,
+			"tests" => $data->tests
 		];
 
 		// send data to the view
@@ -32,35 +33,19 @@ class Service
 	}
 
 	/**
-	 * Show infested by country
+	 * Show all the data by country
 	 *
 	 * @param Request $request
 	 * @param Response $response
 	 */
-	public function _enfermos(Request $request, Response &$response)
+	public function _paises(Request $request, Response $response)
 	{
 		// get array of confirmed
-		$items = $this->getArrayByCountry('confirmed');
+		$data = $this->getJSONDataForToday();
 
 		// send data to the view
 		$response->setCache('day');
-		$response->setTemplate('enfermos.ejs', ["items" => $items]);
-	}
-
-	/**
-	 * Show deaths by country
-	 *
-	 * @param Request $request
-	 * @param Response $response
-	 */
-	public function _muertes(Request $request, Response &$response)
-	{
-		// get array of confirmed
-		$items = $this->getArrayByCountry('deaths');
-
-		// send data to the view
-		$response->setCache('day');
-		$response->setTemplate('muertes.ejs', ["items" => $items]);
+		$response->setTemplate('paises.ejs', ["countries" => $data->countries]);
 	}
 
 	/**
@@ -69,7 +54,7 @@ class Service
 	 * @param Request $request
 	 * @param Response $response
 	 */
-	public function _recuperados(Request $request, Response &$response)
+	public function _recuperados(Request $request, Response $response)
 	{
 		// get array of confirmed
 		$items = $this->getArrayByCountry('recovered');
@@ -95,8 +80,11 @@ class Service
 		// crawl the data from the web
 		else {
 			// get the JSON data
-			$data = Crawler::get('https://coronavirus-tracker-api.herokuapp.com/all');
+			$data = Crawler::get('https://www.covidvisualizer.com/api');
 			$data = json_decode($data);
+
+			// format the data
+			$data = $this->formatDataArray($data);
 
 			// create the cache
 			file_put_contents($cache, serialize($data));
@@ -107,51 +95,48 @@ class Service
 	}
 
 	/**
-	 * Get the array of confirmed, deaths or recovered by countries
+	 * Formats the data to a friendly structure
 	 *
-	 * @param Enum $type, confirmed|deaths|recovered
-	 * @return Array
+	 * @return JSON
 	 */
-	private function getArrayByCountry($type)
+	private function formatDataArray($data)
 	{
-		// get JSON data
-		$data = $this->getJSONDataForToday();
+		// create data object
+		$dt = new stdClass();
+		$dt->timestamp = $data->timestamp;
+		$dt->cases = 0;
+		$dt->deaths = 0;
+		$dt->recovered = 0;
+		$dt->tests = 0;
+		$dt->countries = [];
 
-		// remove unused data
-		$items = [];
-		foreach ($data->$type->locations as $dt) {
-			// do not add "other" areas
-			if($dt->country_code == 'XX') {
-				continue;
-			}
+		// format country data
+		foreach ($data->countries as $key => $val) {
+			// format the country data
+			$country = new stdClass();
+			$country->code = isset(Core::$countries[$key]) ? strtolower($key) : "";
+			$country->name = isset(Core::$countries[$key]) ? Core::$countries[$key] : $val->name;
+			$country->population = $val->population;
+			$country->cases = $val->cases;
+			$country->deaths = $val->deaths;
+			$country->recovered = $val->recovered;
+			$country->deathsPerOneMillion = $val->deathsPerOneMillion;
+			$country->totalTests = $val->totalTests;
 
-			// make ths country code lowercase
-			$countryCode = strtolower($dt->country_code);
-
-			// if a country's province was already added, update the total
-			if(isset($items[$countryCode])) {
-				$items[$countryCode]->total += $dt->latest;
-				continue;
-			}
-
-			// get the country name in Spanish, of possible
-			$countryName = isset(Core::$countries[$dt->country_code]) ? Core::$countries[$dt->country_code] : $dt->country;
-
-			// add the new country
-			$item =  new \stdClass();
-			$item->total = $dt->latest;
-			$item->countryCode = $countryCode;
-			$item->countryName = $countryName;
-			$items[$countryCode] = $item;
+			// add country data to main array
+			$dt->cases += $country->cases;
+			$dt->deaths += $country->deaths;
+			$dt->recovered += $country->recovered;
+			$dt->tests += $country->totalTests;
+			$dt->countries[] = $country;
 		}
 
-		// sort countries
+		// sort by death per million
 		function cmp($a, $b) {
-			return $a->total < $b->total;
+			return $a->deathsPerOneMillion < $b->deathsPerOneMillion;
 		}
-		usort($items, "cmp");
+		usort($dt->countries, "cmp");
 
-		// return the final array
-		return $items;
+		return $dt;
 	}
 }
