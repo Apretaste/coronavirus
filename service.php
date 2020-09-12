@@ -4,14 +4,16 @@ use Framework\Core;
 use Framework\Crawler;
 use Apretaste\Request;
 use Apretaste\Response;
+use Apretaste\Challenges;
 
 class Service
 {
 	/**
 	 * Show summary of cases
 	 *
-	 * @param Request
-	 * @param Response
+	 * @param Request $request
+	 * @param Response $response
+	 * @throws \Framework\Alert
 	 */
 	public function _main(Request $request, Response $response)
 	{
@@ -27,6 +29,8 @@ class Service
 			"tests" => $data->tests
 		];
 
+		Challenges::complete('view-coronavirus', $request->person->id);
+
 		// send data to the view
 		$response->setCache('day');
 		$response->setTemplate('resumen.ejs', $content);
@@ -37,6 +41,7 @@ class Service
 	 *
 	 * @param Request $request
 	 * @param Response $response
+	 * @throws \Framework\Alert
 	 */
 	public function _paises(Request $request, Response $response)
 	{
@@ -53,6 +58,7 @@ class Service
 	 *
 	 * @param Request $request
 	 * @param Response $response
+	 * @throws \Framework\Alert
 	 */
 	public function _recuperados(Request $request, Response $response)
 	{
@@ -67,7 +73,8 @@ class Service
 	/**
 	 * Get the JSON of cases from cache or from the internet
 	 *
-	 * @return JSON
+	 * @return string
+	 * @throws \Framework\Alert
 	 */
 	private function getJSONDataForToday()
 	{
@@ -97,7 +104,7 @@ class Service
 	/**
 	 * Formats the data to a friendly structure
 	 *
-	 * @return JSON
+	 * @return string
 	 */
 	private function formatDataArray($data)
 	{
@@ -132,7 +139,8 @@ class Service
 		}
 
 		// sort by death per million
-		function cmp($a, $b) {
+		function cmp($a, $b)
+		{
 			return $a->deathsPerOneMillion < $b->deathsPerOneMillion;
 		}
 		usort($dt->countries, "cmp");
